@@ -3,7 +3,9 @@ package orderService
 import (
 	"FastGourmet/internal/core/domain"
 	"FastGourmet/internal/core/port"
-	"os/exec"
+	"encoding/json"
+	"github.com/google/uuid"
+	"log"
 	"time"
 )
 
@@ -22,8 +24,8 @@ func NewServiceImp(orderStorageRepository port.OrderStorageRepository, orderQueu
 }
 
 func (s serviceImp) Send(order *domain.Order) error {
-	newUUID, _ := exec.Command("uuidgen").Output()
-	order.ID = string(newUUID)
+	id := uuid.New()
+	order.ID = string(id.String())
 	order.ArrivedTime = time.Now()
 	order.Priority = 0
 	return s.orderQueueRepository.Enqueue(order)
@@ -33,17 +35,34 @@ func (s serviceImp) Receive() {
 	s.orderQueueRepository.Receive(s.messages)
 }
 
+func (s serviceImp) Recover() {
+	for {
+		message := <-s.messages
+		log.Printf("Got it again [x] %s", message)
+		var newOrder = domain.Order{}
+		json.Unmarshal(message, &newOrder)
+		s.Create(&newOrder)
+	}
+}
+
 func (s serviceImp) Create(order *domain.Order) error {
-	//TODO implement me
-	panic("implement me")
+	err := s.orderStorageRepository.Save(order)
+	if err != nil {
+		return err
+	}
+	return nil
 }
 
-func (s serviceImp) Get(id int) (*domain.Order, error) {
+func (s serviceImp) Get(id string) (*domain.Order, error) {
 	//TODO implement me
-	panic("implement me")
+	return s.orderStorageRepository.Get(id)
 }
 
-func (s serviceImp) Update(id int, order *domain.Order) error {
+func (s serviceImp) Update(id string, order *domain.Order) error {
 	//TODO implement me
-	panic("implement me")
+	return s.orderStorageRepository.Update(id, order)
+}
+
+func (s serviceImp) List() ([]*domain.Order, error) {
+	return s.orderStorageRepository.List()
 }

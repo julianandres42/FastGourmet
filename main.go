@@ -12,8 +12,11 @@ func main() {
 	app := cmd.Application{}
 	app.Start()
 	go app.Receive()
+	go app.Recover()
 	router := gin.Default()
 	router.POST("/enqueue", app.EnqueueOrder)
+	router.GET("/get", app.Get)
+	router.POST("/update", app.Update)
+	router.GET("/list", app.List)
 	router.Run(":8080")
-
 }
