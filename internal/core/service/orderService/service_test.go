@@ -25,7 +25,8 @@ func TestNew(t *testing.T) {
 
 func Test_service_Create(t *testing.T) {
 	type fields struct {
-		orderRepository port.OrdersRepository
+		orderStorageRepository port.OrderStorageRepository
+		orderQueueRepository   port.OrdersQueueRepository
 	}
 	type args struct {
 		order domain.Order
@@ -41,7 +42,8 @@ func Test_service_Create(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			s := service{
-				orderRepository: tt.fields.orderRepository,
+				orderStorageRepository: tt.fields.orderStorageRepository,
+				orderQueueRepository:   tt.fields.orderQueueRepository,
 			}
 			if err := s.Create(tt.args.order); (err != nil) != tt.wantErr {
 				t.Errorf("Create() error = %v, wantErr %v", err, tt.wantErr)
@@ -52,7 +54,8 @@ func Test_service_Create(t *testing.T) {
 
 func Test_service_Get(t *testing.T) {
 	type fields struct {
-		orderRepository port.OrdersRepository
+		orderStorageRepository port.OrderStorageRepository
+		orderQueueRepository   port.OrdersQueueRepository
 	}
 	type args struct {
 		id int
@@ -69,7 +72,8 @@ func Test_service_Get(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			s := service{
-				orderRepository: tt.fields.orderRepository,
+				orderStorageRepository: tt.fields.orderStorageRepository,
+				orderQueueRepository:   tt.fields.orderQueueRepository,
 			}
 			got, err := s.Get(tt.args.id)
 			if (err != nil) != tt.wantErr {
@@ -85,7 +89,8 @@ func Test_service_Get(t *testing.T) {
 
 func Test_service_Send(t *testing.T) {
 	type fields struct {
-		orderRepository port.OrdersRepository
+		orderStorageRepository port.OrderStorageRepository
+		orderQueueRepository   port.OrdersQueueRepository
 	}
 	type args struct {
 		order domain.Order
@@ -101,7 +106,8 @@ func Test_service_Send(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			s := service{
-				orderRepository: tt.fields.orderRepository,
+				orderStorageRepository: tt.fields.orderStorageRepository,
+				orderQueueRepository:   tt.fields.orderQueueRepository,
 			}
 			if err := s.Send(tt.args.order); (err != nil) != tt.wantErr {
 				t.Errorf("Send() error = %v, wantErr %v", err, tt.wantErr)
@@ -112,7 +118,8 @@ func Test_service_Send(t *testing.T) {
 
 func Test_service_Update(t *testing.T) {
 	type fields struct {
-		orderRepository port.OrdersRepository
+		orderStorageRepository port.OrderStorageRepository
+		orderQueueRepository   port.OrdersQueueRepository
 	}
 	type args struct {
 		id    int
@@ -129,7 +136,8 @@ func Test_service_Update(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			s := service{
-				orderRepository: tt.fields.orderRepository,
+				orderStorageRepository: tt.fields.orderStorageRepository,
+				orderQueueRepository:   tt.fields.orderQueueRepository,
 			}
 			if err := s.Update(tt.args.id, tt.args.order); (err != nil) != tt.wantErr {
 				t.Errorf("Update() error = %v, wantErr %v", err, tt.wantErr)

@@ -3,8 +3,8 @@ package port
 import "FastGourmet/internal/core/domain"
 
 type OrdersQueueRepository interface {
-	Enqueue(order domain.Order) error
-	Receive(order domain.Order) error
+	Enqueue(order *domain.Order) error
+	Receive(chan []byte)
 }
 
 type OrderStorageRepository interface {
@@ -15,8 +15,9 @@ type OrderStorageRepository interface {
 }
 
 type OrdersService interface {
-	Send(order domain.Order) error
-	Create(order domain.Order) error
-	Get(id int) (domain.Order, error)
-	Update(id int, order domain.Order) error
+	Send(order *domain.Order) error
+	Create(order *domain.Order) error
+	Get(id int) (*domain.Order, error)
+	Update(id int, order *domain.Order) error
+	Receive()
 }
