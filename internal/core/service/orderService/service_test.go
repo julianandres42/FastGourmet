@@ -2,146 +2,153 @@ package orderService
 
 import (
 	"FastGourmet/internal/core/domain"
-	"FastGourmet/internal/core/port"
-	"reflect"
+	"encoding/json"
+	"errors"
 	"testing"
+	"time"
 )
 
-func TestNew(t *testing.T) {
-	tests := []struct {
-		name string
-		want *service
-	}{
-		// TODO: Add test cases.
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			if got := New(); !reflect.DeepEqual(got, tt.want) {
-				t.Errorf("New() = %v, want %v", got, tt.want)
-			}
-		})
+type orderStorageRepositoryMock struct {
+}
+
+func (o orderStorageRepositoryMock) Save(order *domain.Order) error {
+	//TODO implement me
+	return nil
+}
+
+func (o orderStorageRepositoryMock) List() ([]*domain.Order, error) {
+	//TODO implement me
+	return []*domain.Order{{
+		ID:          "",
+		ArrivedTime: time.Time{},
+		Dishes:      nil,
+		Priority:    0,
+		Status:      0,
+		Source:      0,
+	}}, nil
+}
+
+func (o orderStorageRepositoryMock) Get(id string) (*domain.Order, error) {
+	//TODO implement me
+	return &domain.Order{}, nil
+}
+
+func (o orderStorageRepositoryMock) Update(id string, order *domain.Order) error {
+	//TODO implement me
+	return nil
+}
+
+type orderStorageRepositoryMockError struct{}
+
+func (o orderStorageRepositoryMockError) Save(order *domain.Order) error {
+	//TODO implement me
+	return errors.New("error")
+}
+
+func (o orderStorageRepositoryMockError) List() ([]*domain.Order, error) {
+	//TODO implement me
+	panic("implement me")
+}
+
+func (o orderStorageRepositoryMockError) Get(id string) (*domain.Order, error) {
+	//TODO implement me
+	return &domain.Order{}, nil
+}
+
+func (o orderStorageRepositoryMockError) Update(id string, order *domain.Order) error {
+	//TODO implement me
+	panic("implement me")
+}
+
+type orderQueueRepositoryMock struct{}
+
+func (o orderQueueRepositoryMock) Enqueue(order *domain.Order) error {
+	return nil
+}
+
+func (o orderQueueRepositoryMock) Receive(c chan []byte) {
+	c <- []byte("hello world")
+
+}
+
+func TestSendOrder(t *testing.T) {
+	service := NewServiceImp(orderStorageRepositoryMock{}, orderQueueRepositoryMock{})
+	result := service.Send(&domain.Order{
+		ID:          "",
+		ArrivedTime: time.Time{},
+		Dishes:      nil,
+		Priority:    0,
+		Status:      0,
+		Source:      0,
+	})
+	if result != nil {
+		t.Error("result should be nil")
 	}
 }
 
-func Test_service_Create(t *testing.T) {
-	type fields struct {
-		orderStorageRepository port.OrderStorageRepository
-		orderQueueRepository   port.OrdersQueueRepository
-	}
-	type args struct {
-		order domain.Order
-	}
-	tests := []struct {
-		name    string
-		fields  fields
-		args    args
-		wantErr bool
-	}{
-		// TODO: Add test cases.
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			s := service{
-				orderStorageRepository: tt.fields.orderStorageRepository,
-				orderQueueRepository:   tt.fields.orderQueueRepository,
-			}
-			if err := s.Create(tt.args.order); (err != nil) != tt.wantErr {
-				t.Errorf("Create() error = %v, wantErr %v", err, tt.wantErr)
-			}
-		})
+func TestReceiveOrder(t *testing.T) {
+	service := NewServiceImp(orderStorageRepositoryMock{}, orderQueueRepositoryMock{})
+	go service.Receive()
+	result := <-service.messages
+	if result == nil {
+		t.Error("result should not be nil")
 	}
 }
 
-func Test_service_Get(t *testing.T) {
-	type fields struct {
-		orderStorageRepository port.OrderStorageRepository
-		orderQueueRepository   port.OrdersQueueRepository
+func TestRecoveryMessage(t *testing.T) {
+	service := NewServiceImp(orderStorageRepositoryMock{}, orderQueueRepositoryMock{})
+	order := domain.Order{
+		ID:          "",
+		ArrivedTime: time.Time{},
+		Dishes:      nil,
+		Priority:    0,
+		Status:      0,
+		Source:      0,
 	}
-	type args struct {
-		id int
-	}
-	tests := []struct {
-		name    string
-		fields  fields
-		args    args
-		want    domain.Order
-		wantErr bool
-	}{
-		// TODO: Add test cases.
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			s := service{
-				orderStorageRepository: tt.fields.orderStorageRepository,
-				orderQueueRepository:   tt.fields.orderQueueRepository,
-			}
-			got, err := s.Get(tt.args.id)
-			if (err != nil) != tt.wantErr {
-				t.Errorf("Get() error = %v, wantErr %v", err, tt.wantErr)
-				return
-			}
-			if !reflect.DeepEqual(got, tt.want) {
-				t.Errorf("Get() got = %v, want %v", got, tt.want)
-			}
-		})
+	message, _ := json.Marshal(order)
+	go func() {
+		service.messages <- message
+	}()
+	go service.Recover()
+	if len(service.messages) != 0 {
+		t.Error("message should be empty")
 	}
 }
 
-func Test_service_Send(t *testing.T) {
-	type fields struct {
-		orderStorageRepository port.OrderStorageRepository
-		orderQueueRepository   port.OrdersQueueRepository
-	}
-	type args struct {
-		order domain.Order
-	}
-	tests := []struct {
-		name    string
-		fields  fields
-		args    args
-		wantErr bool
-	}{
-		// TODO: Add test cases.
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			s := service{
-				orderStorageRepository: tt.fields.orderStorageRepository,
-				orderQueueRepository:   tt.fields.orderQueueRepository,
-			}
-			if err := s.Send(tt.args.order); (err != nil) != tt.wantErr {
-				t.Errorf("Send() error = %v, wantErr %v", err, tt.wantErr)
-			}
-		})
+func TestSaveError(t *testing.T) {
+	service := NewServiceImp(orderStorageRepositoryMockError{}, orderQueueRepositoryMock{})
+	err := service.Create(&domain.Order{})
+	if err == nil {
+		t.Error("error should be nil")
 	}
 }
 
-func Test_service_Update(t *testing.T) {
-	type fields struct {
-		orderStorageRepository port.OrderStorageRepository
-		orderQueueRepository   port.OrdersQueueRepository
+func TestGetOrder(t *testing.T) {
+	service := NewServiceImp(orderStorageRepositoryMock{}, orderQueueRepositoryMock{})
+	result, err := service.Get("aaa")
+	if err != nil {
+		t.Error("error should be nil")
 	}
-	type args struct {
-		id    int
-		order domain.Order
+	if result == nil {
+		t.Error("result should not be nil")
 	}
-	tests := []struct {
-		name    string
-		fields  fields
-		args    args
-		wantErr bool
-	}{
-		// TODO: Add test cases.
+}
+
+func TestUpdateOrder(t *testing.T) {
+	service := NewServiceImp(orderStorageRepositoryMock{}, orderQueueRepositoryMock{})
+	err := service.Update("aaa", &domain.Order{})
+	if err != nil {
+		t.Error("error should be nil")
 	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			s := service{
-				orderStorageRepository: tt.fields.orderStorageRepository,
-				orderQueueRepository:   tt.fields.orderQueueRepository,
-			}
-			if err := s.Update(tt.args.id, tt.args.order); (err != nil) != tt.wantErr {
-				t.Errorf("Update() error = %v, wantErr %v", err, tt.wantErr)
-			}
-		})
+}
+
+func TestListOrder(t *testing.T) {
+	service := NewServiceImp(orderStorageRepositoryMock{}, orderQueueRepositoryMock{})
+	result, err := service.List()
+	if err != nil {
+		t.Error("error should be nil")
+	}
+	if len(result) == 0 {
+		t.Error("result should not be empty")
 	}
 }
